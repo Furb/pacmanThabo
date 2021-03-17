@@ -5,10 +5,17 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.View.OnClickListener
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), OnClickListener {
+
+    private var pacTimer: Timer = Timer()
+
+    var counter = 0
 
     //reference to the game class.
     private var game: Game? = null
@@ -20,19 +27,101 @@ class MainActivity : AppCompatActivity() {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContentView(R.layout.activity_main)
 
+        play.setOnClickListener(this)
+        pause.setOnClickListener(this)
+        reset.setOnClickListener(this)
+
+
+        game?.running = true
+        pacTimer.schedule(object : TimerTask() {
+            override fun run() {
+                timerMethod()
+            }
+
+        }, 0, 200) //0 indicates we start now, 200
+        //is the number of miliseconds between each call
+
+
         game = Game(this,pointsView)
 
-        //intialize the game view clas and game class
+        //intialize the game view class and game class
         game?.setGameView(gameView)
         gameView.setGame(game)
         game?.newGame()
 
+        moveUp.setOnClickListener {
+            game?.direction = 0
+        }
+
         moveRight.setOnClickListener {
-            game?.movePacmanRight(10)
+            game?.direction = 1
+        }
+
+        moveDown.setOnClickListener {
+            game?.direction = 2
+        }
+
+        moveLeft.setOnClickListener {
+            game?.direction = 3
         }
 
 
     }
+
+
+    fun timerMethod() {
+        this.runOnUiThread(timerTick)
+    }
+
+    private val timerTick = Runnable {
+        //This method runs in the same thread as the UI.
+        // so we can draw
+        if (game?.running == true) {
+            counter++
+            //update the counter - notice this is NOT seconds in this example
+            //you need TWO counters - one for the timer count down that will
+            // run every second and one for the pacman which need to run
+            //faster than every second
+            time.text = getString(R.string.timerValue,counter)
+
+
+            if (game?.direction==0)
+            { // move up
+                game?.movePacmanUp(20)
+
+            }
+            else if (game?.direction==1)
+            { // move up
+                game?.movePacmanRight(20)
+
+            }
+            else if (game?.direction==2)
+            {
+                game?.movePacmanDown(20)
+            }
+            else if (game?.direction==3)
+            {
+                game?.movePacmanLeft(20)
+            }
+        }
+    }
+
+    //if anything is pressed - we do the checks here
+    override fun onClick(v: View) {
+        if (v.id == R.id.play) {
+            game?.running = true
+        } else if (v.id == R.id.pause) {
+            game?.running = false
+        } else if (v.id == R.id.reset) {
+            counter = 0
+            game?.newGame() //you should call the newGame method instead of this
+            game?.running = false
+            time.text = getString(R.string.timerValue,counter)
+
+        }
+    }
+
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -51,8 +140,11 @@ class MainActivity : AppCompatActivity() {
         } else if (id == R.id.action_newGame) {
             Toast.makeText(this, "New Game clicked", Toast.LENGTH_LONG).show()
             game?.newGame()
+            time.text = getString(R.string.timerValue,counter)
             return true
         }
         return super.onOptionsItemSelected(item)
     }
+
+
 }
