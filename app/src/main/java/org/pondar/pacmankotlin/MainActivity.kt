@@ -1,5 +1,6 @@
 package org.pondar.pacmankotlin
 
+import android.animation.ObjectAnimator
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.Gravity
@@ -36,6 +37,14 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         play.setOnClickListener(this)
         pause.setOnClickListener(this)
         reset.setOnClickListener(this)
+
+        //progressbar
+        progressBar.max = 1000
+        val currentProgress = 600
+
+        ObjectAnimator.ofInt(progressBar, "progress", currentProgress)
+                .setDuration(60000)
+                .start()
 
 
 
