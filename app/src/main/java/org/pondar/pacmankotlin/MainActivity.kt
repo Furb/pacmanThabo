@@ -1,21 +1,27 @@
 package org.pondar.pacmankotlin
 
 import android.content.pm.ActivityInfo
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.View.OnClickListener
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
 class MainActivity : AppCompatActivity(), OnClickListener {
 
+    //timer for the moves
     private var pacTimer: Timer = Timer()
+    var countMove = 0
 
-    var counter = 0
+    //timer for the countdown
+    private var countDownTimer: Timer = Timer()
+    var countDown = 60
+
 
     //reference to the game class.
     private var game: Game? = null
@@ -32,14 +38,25 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         reset.setOnClickListener(this)
 
 
+
         game?.running = true
+
+        //timer 1
         pacTimer.schedule(object : TimerTask() {
             override fun run() {
-                timerMethod()
+                timerMethodpacMoves()
             }
 
         }, 0, 200) //0 indicates we start now, 200
         //is the number of miliseconds between each call
+
+
+        //timer 2
+        countDownTimer.schedule(object : TimerTask() {
+            override fun run() {
+                timerMethodCount()
+            }
+        }, 0, 1000)
 
 
         game = Game(this,pointsView)
@@ -65,24 +82,26 @@ class MainActivity : AppCompatActivity(), OnClickListener {
             game?.direction = 3
         }
 
+    }
 
+    override fun onStop() {
+        super.onStop()
+        pacTimer.cancel()
     }
 
 
-    fun timerMethod() {
-        this.runOnUiThread(timerTick)
+    private fun timerMethodpacMoves() {
+        this.runOnUiThread(timerTickMoves)
     }
 
-    private val timerTick = Runnable {
-        //This method runs in the same thread as the UI.
-        // so we can draw
+    private fun timerMethodCount() {
+        this.runOnUiThread(timerTickCountDown)
+    }
+
+    private val timerTickMoves = Runnable {
+
         if (game?.running == true) {
-            counter++
-            //update the counter - notice this is NOT seconds in this example
-            //you need TWO counters - one for the timer count down that will
-            // run every second and one for the pacman which need to run
-            //faster than every second
-            time.text = getString(R.string.timerValue,counter)
+            countMove++
 
 
             if (game?.direction==0)
@@ -91,16 +110,16 @@ class MainActivity : AppCompatActivity(), OnClickListener {
 
             }
             else if (game?.direction==1)
-            { // move up
+            { // move right
                 game?.movePacmanRight(20)
 
             }
             else if (game?.direction==2)
-            {
+            { // move down
                 game?.movePacmanDown(20)
             }
             else if (game?.direction==3)
-            {
+            { // move left
                 game?.movePacmanLeft(20)
             }
         }
@@ -113,10 +132,11 @@ class MainActivity : AppCompatActivity(), OnClickListener {
         } else if (v.id == R.id.pause) {
             game?.running = false
         } else if (v.id == R.id.reset) {
-            counter = 0
+            countMove = 0
+            countDown = 60
             game?.newGame() //you should call the newGame method instead of this
             game?.running = false
-            time.text = getString(R.string.timerValue,counter)
+            //Here we removed the counter for moves
 
         }
     }
@@ -139,11 +159,39 @@ class MainActivity : AppCompatActivity(), OnClickListener {
             return true
         } else if (id == R.id.action_newGame) {
             Toast.makeText(this, "New Game clicked", Toast.LENGTH_LONG).show()
+            game?.running = false
+            countMove = 0
+            countDown = 60
             game?.newGame()
-            time.text = getString(R.string.timerValue,counter)
+            // //Here we removed the counter for moves
+            // But it would look like this: Textview.text = getString(R.string.timerValue,countMove)
             return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private val timerTickCountDown = Runnable {
+        //This method runs in the same thread as the UI.
+        // so we can draw
+        if (game?.running == true) {
+            countDown--
+            //update the counter - notice this is NOT seconds in this example
+            //you need TWO counters - one for the timer count down that will
+            // run every second and one for the pacman which need to run
+            //faster than every second
+            timerForCountDown.text = getString(R.string.timerValue, countDown)
+
+
+            if (countDown <= 0) {
+                Toast.makeText(this, "So sad, game over!!", Toast.LENGTH_SHORT).show()
+                game?.running = false
+                game?.newGame()
+                countDown = 60
+
+
+            }
+        }
+
     }
 
 
